@@ -26,13 +26,13 @@
 
 stdenv.mkDerivation rec {
   pname = "gcr";
-  version = "3.41.0";
+  version = "3.90.0";
 
   outputs = [ "out" "dev" ];
 
   src = fetchurl {
     url = "mirror://gnome/sources/${pname}/${lib.versions.majorMinor version}/${pname}-${version}.tar.xz";
-    sha256 = "CQn8SeqK1IMtJ1ZP8v0dxmZpbioHxzlBxIgp5gVy2gE=";
+    sha256 = "5ZB0nsh2A38LDimVDCyyCIEnDAX0fsUmlSCog9iTSE4=";
   };
 
   patches = [
