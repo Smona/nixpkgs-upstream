@@ -10,6 +10,7 @@
 , gitUpdater
 , jq
 , makeWrapper
+, nodejs-16_x
 , mkYarnPackage
 , which
 , writers
@@ -34,6 +35,9 @@ stdenvNoCC.mkDerivation rec {
   mirakurun = mkYarnPackage rec {
     name = "${pname}-${version}";
     inherit version src;
+
+    # Max version supported in package.json#engines
+    nodejs = nodejs-16_x;
 
     yarnNix = ./yarn.nix;
     yarnLock = ./yarn.lock;
