@@ -11585,11 +11585,14 @@ with pkgs;
   openrgb-with-all-plugins = openrgb.withPlugins [
     openrgb-plugin-effects
     openrgb-plugin-hardwaresync
+    openrgb-plugin-visualmap
   ];
 
   openrgb-plugin-effects = libsForQt5.callPackage ../applications/misc/openrgb-plugins/effects { };
 
   openrgb-plugin-hardwaresync = libsForQt5.callPackage ../applications/misc/openrgb-plugins/hardwaresync { };
+
+  openrgb-plugin-visualmap = libsForQt5.callPackage ../applications/misc/openrgb-plugins/visualmap { };
 
   openrussian-cli = callPackage ../misc/openrussian-cli {
     lua = lua5_3;
