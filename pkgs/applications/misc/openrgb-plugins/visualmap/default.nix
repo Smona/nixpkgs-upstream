@@ -8,8 +8,8 @@ stdenv.mkDerivation rec {
   src = fetchFromGitLab {
     owner = "OpenRGBDevelopers";
     repo = "OpenRGBVisualMapPlugin";
-    rev = "release_${version}";
-    hash = "sha256-8w5f/aZcnWKht8Af2S9ekD/cXyi7Nlklf85YMAHU3+M=";
+    rev = "c4e8b4c8c11a8cdfbe538bd6aa0e1c79a0d033b9";
+    hash = "sha256-heBiSBz5VsNsQ1ap51iPyYkW8Jq/5aoHWRypIOVfUDQ=";
   };
 
   postPatch = ''
@@ -18,14 +18,14 @@ stdenv.mkDerivation rec {
     ln -s ${openrgb.src} OpenRGB
   '';
 
-  buildInputs = [ qtbase glib ];
+  buildInputs = [ qtbase ];
 
   nativeBuildInputs = [ qmake pkg-config wrapQtAppsHook ];
 
-  installPhase = ''
-    mkdir -p $out/lib
-    cp libOpenRGBVisualMapPlugin.so $out/lib
-  '';
+  # installPhase = ''
+  #   mkdir -p $out/lib
+  #   cp libOpenRGBVisualMapPlugin.so $out/lib
+  # '';
 
   meta = with lib; {
     homepage = "https://gitlab.com/OpenRGBDevelopers/OpenRGBVisualMapPlugin";
