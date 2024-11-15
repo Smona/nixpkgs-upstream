@@ -33,7 +33,7 @@
 #
 # [1]: https://github.com/DataDog/integrations-core
 
-{ pkgs, python, extraIntegrations ? {} }:
+{ pkgs, python, extraIntegrations ? { }, }:
 
 let
   inherit (pkgs.lib) attrValues mapAttrs;
@@ -42,18 +42,20 @@ let
     owner = "DataDog";
     repo = "integrations-core";
     rev = version;
-    sha256 = "sha256-CIzuJ97KwsG1k65Y+8IUSka/3JX1pmQKN3hPHzZnGhQ=";
+    sha256 = "sha256-tgY8Jh7N9ot3Xp+JfsA9vEzj62H2OPTEh6b1YzyNGRU=";
   };
-  version = "7.38.0";
+  version = "7.50.2";
 
   # Build helper to build a single datadog integration package.
-  buildIntegration = { pname, ... }@args: python.pkgs.buildPythonPackage (args // {
-    inherit src version;
-    name = "datadog-integration-${pname}-${version}";
+  buildIntegration = { pname, ... }@args:
+    python.pkgs.buildPythonPackage (args // {
+      inherit src version;
+      name = "datadog-integration-${pname}-${version}";
+      pyproject = true;
 
-    sourceRoot = "${src.name}/${args.sourceRoot or pname}";
-    doCheck = false;
-  });
+      sourceRoot = "${src.name}/${args.sourceRoot or pname}";
+      doCheck = false;
+    });
 
   # Base package depended on by all other integrations.
   datadog_checks_base = buildIntegration {
@@ -66,6 +68,8 @@ let
         --replace "from setuptools import setup" "from setuptools import find_packages, setup" \
         --replace "packages=['datadog_checks']" "packages=find_packages()"
     '';
+
+    buildInputs = with python.pkgs; [ hatchling setuptools ];
 
     propagatedBuildInputs = with python.pkgs; [
       binary
@@ -105,10 +109,12 @@ let
 
   # All integrations (default + extra):
   integrations = defaultIntegrations // extraIntegrations;
-  builtIntegrations = mapAttrs (pname: fdeps: buildIntegration {
-    inherit pname;
-    propagatedBuildInputs = (fdeps python.pkgs) ++ [ datadog_checks_base ];
-  }) integrations;
+  builtIntegrations = mapAttrs (pname: fdeps:
+    buildIntegration {
+      inherit pname;
+      propagatedBuildInputs = (fdeps python.pkgs)
+        ++ (with python.pkgs; [ hatchling setuptools datadog_checks_base ]);
+    }) integrations;
 
 in builtIntegrations // {
   inherit datadog_checks_base;
