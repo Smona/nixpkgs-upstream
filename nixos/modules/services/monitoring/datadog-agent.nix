@@ -10,13 +10,20 @@ let
     confd_path          = "/etc/datadog-agent/conf.d";
     additional_checksd  = "/etc/datadog-agent/checks.d";
     use_dogstatsd       = true;
+    python_version      = 3;
   }
   // optionalAttrs (cfg.logLevel != null) { log_level = cfg.logLevel; }
   // optionalAttrs (cfg.hostname != null) { inherit (cfg) hostname; }
   // optionalAttrs (cfg.ddUrl != null) { dd_url = cfg.ddUrl; }
   // optionalAttrs (cfg.site != null) { site = cfg.site; }
   // optionalAttrs (cfg.tags != null ) { tags = concatStringsSep ", " cfg.tags; }
-  // optionalAttrs (cfg.enableLiveProcessCollection) { process_config = { enabled = "true"; }; }
+  // optionalAttrs (cfg.enableLiveProcessCollection) {
+    process_config = {
+      dd_agent_bin = "${datadogPkg}/bin/agent";
+      process_collection.enabled = "true";
+      container_collection.enabled = "true";
+    };
+  }
   // optionalAttrs (cfg.enableTraceAgent) { apm_config = { enabled = true; }; }
   // cfg.extraConfig;
 

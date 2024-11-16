@@ -1,7 +1,7 @@
 { lib
 , stdenv
 , cmake
-, buildGoModule
+, buildGo122Module
 , makeWrapper
 , fetchFromGitHub
 , pythonPackages
@@ -16,17 +16,17 @@
 
 let
   # keep this in sync with github.com/DataDog/agent-payload dependency
-  payloadVersion = "5.0.97";
+  payloadVersion = "5.0.124";
   python = pythonPackages.python;
   owner   = "DataDog";
   repo    = "datadog-agent";
   goPackagePath = "github.com/${owner}/${repo}";
-  version = "7.50.3";
+  version = "7.56.2";
 
   src = fetchFromGitHub {
     inherit owner repo;
     rev = version;
-    hash = "sha256-AN5BruLPyrpIGSUkcYkZC0VgItk9NHiZTXstv6j9TlY=";
+    hash = "sha256-rU3eg92MuGs/6r7oJho2roeUCZoyfqYt1xOERoRPqmQ=";
   };
   rtloader = stdenv.mkDerivation {
     pname = "datadog-agent-rtloader";
@@ -37,20 +37,22 @@ let
     cmakeFlags = ["-DBUILD_DEMO=OFF" "-DDISABLE_PYTHON2=ON"];
   };
 
-in buildGoModule rec {
+in buildGo122Module rec {
   pname = "datadog-agent";
   inherit src version;
 
   doCheck = false;
 
-  vendorHash = "sha256-Rn8EB/6FHQk9COlOaxm4TQXjGCIPZHJV2QQnPDcbRnM=";
+  vendorHash = if stdenv.isDarwin
+               then "sha256-Siy3OhCAQOl/KcB+/fCOMTrf2rSEcesvOUL5gwVqCFA="
+               else "sha256-/zrV+CiifuDnuEBZpnNXh0g0RnF2pcq4fQkhm3/c4ao=";
 
   subPackages = [
     "cmd/agent"
     "cmd/cluster-agent"
     "cmd/dogstatsd"
-    "cmd/py-launcher"
     "cmd/trace-agent"
+    "cmd/system-probe"
   ];
 
 
@@ -78,11 +80,6 @@ in buildGoModule rec {
     "-r ${python}/lib"
   ];
 
-  preBuild = ''
-    # Keep directories to generate in sync with tasks/go.py
-    go generate ./pkg/status ./cmd/agent/gui
-  '';
-
   # DataDog use paths relative to the agent binary, so fix these.
   postPatch = ''
     sed -e "s|PyChecksPath =.*|PyChecksPath = \"$out/${python.sitePackages}\"|" \
@@ -92,6 +89,12 @@ in buildGoModule rec {
         -i pkg/util/hostname/fqdn_nix.go
   '';
 
+  overrideModAttrs = {
+    # postPatch is inherited by the go modules fixed-output derivation by default,
+    # but patching /bin paths there like we do above will introduce forbidden paths in the output.
+    postPatch = null;
+  };
+
   # Install the config files and python modules from the "dist" dir
   # into standard paths.
   postInstall = ''
@@ -100,10 +103,8 @@ in buildGoModule rec {
     rm -rf $out/share/datadog-agent/conf.d/{apm.yaml.default,process_agent.yaml.default,winproc.d}
     cp -R $src/cmd/agent/dist/{checks,utils,config.py} $out/${python.sitePackages}
 
-    cp -R $src/pkg/status/templates $out/share/datadog-agent
-
     wrapProgram "$out/bin/agent" \
-      --set PYTHONPATH "$out/${python.sitePackages}"''
+      --set PYTHONPATH "$out/${python.sitePackages}" --set PATH "${python}/bin"''
       + lib.optionalString withSystemd " --prefix LD_LIBRARY_PATH : ${lib.makeLibraryPath [ (lib.getLib systemd) rtloader ]}";
 
   passthru.tests.version = testers.testVersion {
@@ -119,10 +120,5 @@ in buildGoModule rec {
     homepage    = "https://www.datadoghq.com";
     license     = licenses.bsd3;
     maintainers = with maintainers; [ thoughtpolice domenkozar ];
-    # never built on aarch64-darwin since first introduction in nixpkgs
-    # broken = stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isAarch64;
-
-    # Upstream does not support Go > 1.21; for update refer to https://github.com/NixOS/nixpkgs/issues/351119
-    broken = true;
   };
 }
